@@ -1,0 +1,349 @@
+#views.py
+from django.db.models import Count
+from .serializers import DepartmentSerializer, SessionSettingsSerializer, UpdateUserRoleSerializer
+from django.http import FileResponse
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets, permissions
+from rest_framework.permissions import IsAuthenticated
+from core import permissions
+from .card_utils import generate_membership_card
+from .utils import log_action
+from .models import AuditLog, Book, BookIssuance,  BookReservation, Department,  Fine, MemberProfile, NotificationLog, SessionSettings, User
+from .serializers import AuditLogSerializer,  BookSerializer, IssuedBookHistorySerializer, NotificationLogSerializer
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework import filters
+from drf_spectacular.utils import extend_schema, OpenApiResponse
+
+
+class BookViewSet(viewsets.ModelViewSet):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+
+    def get_permissions(self):
+        # Allow anyone (even Members) to view books
+        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
+            return [AllowAny()]
+        # Only Admins and authorized Managers can modify
+        return [permissions.CanManageBooks()]
+
+    def update(self, request, *args, **kwargs):
+        book = self.get_object()
+        old_status = book.status
+        response = super().update(request, *args, **kwargs)
+        new_status = response.data.get('status')
+
+        if old_status != new_status and new_status in ['WRITE_OFF', 'LOST']:
+            log_action(
+                request.user,
+                'BOOK_STATUS_CHANGE',
+                f"Book '{book.title}' (ID: {book.id}) marked as {new_status}."
+            )
+
+        return response
+
+
+class NotificationLogViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = NotificationLog.objects.all()
+    serializer_class = NotificationLogSerializer
+    permission_classes = [IsAuthenticated,
+                          permissions.IsAdminOrLibrarian]
+
+
+@extend_schema(request=None, responses=None)
+@api_view(['POST'])
+@permission_classes([permissions.CanManageUsers])
+def update_user_role(request):
+    user_id = request.data.get('user_id')
+    new_role = request.data.get('role')
+    if new_role == 'ADMIN' and not request.user.is_superuser:
+        return Response({'detail': 'Only superusers can assign ADMIN role.'}, status=403)
+    if not user_id or not new_role:
+        return Response({'detail': 'user_id and role are required'}, status=400)
+    try:
+        user = User.objects.get(id=user_id)
+        user.role = new_role
+        user.save()
+        # Log the action
+        log_action(request.user, 'ROLE_CHANGE',
+                   f"Updated role for {user.username} to {new_role}")
+        return Response({'detail': f"Updated role to {new_role} for user {user.username}"})
+    except User.DoesNotExist:
+        return Response({'detail': 'User not found'}, status=404)
+
+
+@extend_schema(
+    responses=OpenApiResponse(
+        description="PDF file response (membership card)")
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, permissions.CanManageUsers])
+def download_membership_card(request, member_id):
+    member = get_object_or_404(MemberProfile, id=member_id)
+    pdf_buffer = generate_membership_card(member)
+    return FileResponse(pdf_buffer, as_attachment=True, filename=f"{member.member_id}_card.pdf")
+
+
+class UserHistoryViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = IssuedBookHistorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return BookIssuance.objects.filter(user=self.request.user).order_by('-issued_at')
+
+
+class AllHistoryViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = IssuedBookHistorySerializer
+    queryset = BookIssuance.objects.all().order_by('-issue_date')
+    permission_classes = [IsAuthenticated, permissions.CanManageBooks]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['book__title', 'user__username']
+
+
+@extend_schema(request=None, responses=None)
+@api_view(['GET'])
+@permission_classes([permissions.CanManageUsers])
+def dashboard_summary(request):
+    total_books = Book.objects.count()
+    total_users = User.objects.count()
+    total_members = User.objects.filter(role='MEMBER').count()
+    total_issued_books = BookIssuance.objects.filter(
+        returned_at__isnull=True).count()
+    total_reservations = BookReservation.objects.count()
+    total_fines_unpaid = Fine.objects.filter(paid=False).count()
+
+    # Department-wise member distribution
+    department_stats = MemberProfile.objects.values('department').annotate(
+        member_count=Count('id')
+    ).order_by('department')
+
+    return Response({
+        "total_books": total_books,
+        "total_users": total_users,
+        "total_members": total_members,
+        "total_issued_books": total_issued_books,
+        "total_reservations": total_reservations,
+        "total_fines_unpaid": total_fines_unpaid,
+        "departments": list(department_stats)
+    })
+
+
+class DepartmentViewSet(viewsets.ModelViewSet):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+
+    def get_permissions(self):
+        if self.request.user.is_authenticated and self.request.user.role.upper() in ['ADMIN', 'SUPER USER']:
+            return [permissions.IsAdminOrSuperuser()]
+
+        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
+            return [permissions.IsMember()]
+
+        # Member trying to do POST, PUT, etc
+        self.permission_denied(
+            self.request,
+            message="You do not have permission to perform this action.",
+        )
+
+
+class SessionSettingsViewSet(viewsets.ModelViewSet):
+    queryset = SessionSettings.objects.all()
+    serializer_class = SessionSettingsSerializer
+
+    def get_permissions(self):
+        if self.request.user.is_authenticated and self.request.user.role.upper() in ['ADMIN', 'SUPER USER']:
+            return [permissions.IsAdminOrSuperuser()]
+
+        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
+            return [permissions.IsMember()]
+
+        self.permission_denied(
+            self.request,
+            message="You do not have permission to perform this action.",
+        )
+#urls.py 
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import (
+    AllHistoryViewSet, DepartmentViewSet, NotificationLogViewSet, SessionSettingsViewSet,
+    UserHistoryViewSet, dashboard_summary, download_membership_card,
+)
+
+router = DefaultRouter()
+router.register(r'departments', DepartmentViewSet, basename='departments')
+router.register(r'sessions', SessionSettingsViewSet, basename='sessions')
+router.register('notifications', NotificationLogViewSet)
+router.register('my-history', UserHistoryViewSet, basename='my-history')
+router.register('all-history', AllHistoryViewSet, basename='all-history')
+
+urlpatterns = [
+    path('admin/members/<int:member_id>/card/',
+         download_membership_card, name='download_card'),
+    path('dashboard-summary/', dashboard_summary),
+    path('', include(router.urls)),
+]
+#serializers.py 
+from rest_framework import serializers
+from .models import AuditLog, Book, BookIssuance, BookReservation, Department,  Fine,  NotificationLog, SessionSettings, User
+import logging
+
+logger = logging.getLogger(__name__)
+class UserSerializer(serializers.ModelSerializer):
+    member_id = serializers.CharField(
+        source='profile.member_id', read_only=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'role', 'member_id']
+
+class BookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = '__all__'
+
+class FineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Fine
+        fields = '__all__'
+
+class NotificationLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationLog
+        fields = '__all__'
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuditLog
+        fields = '__all__'
+class BookReservationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BookReservation
+        fields = '__all__'
+        read_only_fields = ['user', 'reserved_at', 'status']
+
+class IssuedBookHistorySerializer(serializers.ModelSerializer):
+    book_title = serializers.CharField(source='book.title', read_only=True)
+    user_name = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = BookIssuance
+        fields = ['id', 'book_title', 'user_name',
+                  'issue_date', 'due_date', 'returned_at']
+
+
+
+
+
+class UpdateUserRoleSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    role = serializers.CharField()
+
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = ['id', 'name']
+
+
+class SessionSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SessionSettings
+        fields = ['id', 'session_range']
+
+tasks.py 
+from celery import shared_task
+from .models import IssuedBook, NotificationLog
+from django.utils import timezone
+from datetime import timedelta
+from django.core.mail import send_mail
+
+
+@shared_task
+def check_overdue_books():
+    today = timezone.now()
+    overdue_books = IssuedBook.objects.filter(
+        due_date__lt=today, returned_at__isnull=True)
+
+    for issued in overdue_books:
+        user = issued.user
+        book = issued.book
+        days_overdue = (today - issued.due_date).days
+
+        subject = f"Overdue Book Reminder: {book.title}"
+        message = f"Hi {user.username},\n\nYou have an overdue book:\n- Title: {book.title}\n- Due: {issued.due_date.date()}\n- Days Overdue: {days_overdue}\n\nPlease return it ASAP to avoid further fines."
+
+        # Send Email
+        send_mail(subject, message, 'library@noreply.com', [user.email])
+
+        # Log notification
+        NotificationLog.objects.create(user=user, message=message)
+
+        print(f"[EMAIL SENT] To {user.email} - {book.title}")
+
+#from rest_framework.permissions import BasePermission, SAFE_METHODS
+
+
+class IsAdminOrLibrarian(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (
+            request.user.role in ['ADMIN', 'SUPER USER', 'MANAGER']
+        )
+
+
+class IsAdminOrSuperuser(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (
+            request.user.role == [
+                'ADMIN', 'SUPER USER'] or request.user.is_superuser
+        )
+
+
+class IsMember(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'MEMBER'
+
+
+class ReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        return request.method in SAFE_METHODS
+
+
+ROLE_MAP = {
+    'manage_books': ['ADMIN', 'SUPER USER', 'MANAGER'],
+    'issue_books': ['ADMIN', 'SUPER USER', 'MANAGER'],
+    'return_books': ['ADMIN', 'SUPER USER', 'MANAGER'],
+    'handle_fines': ['ADMIN', 'SUPER USER', 'MANAGER'],
+    'view_requests': ['ADMIN', 'SUPER USER', 'MANAGER'],
+    'manage_users': ['ADMIN', 'SUPER USER', 'MANAGER'],
+}
+
+
+def has_role(user, allowed_roles):
+    return user.is_authenticated and user.role in allowed_roles
+
+
+class CanManageBooks(BasePermission):
+    def has_permission(self, request, view):
+        return has_role(request.user, ROLE_MAP['manage_books'])
+
+
+class CanManageUsers(BasePermission):
+    def has_permission(self, request, view):
+        return has_role(request.user, ROLE_MAP['manage_users'])
+
+
+class CanIssueReturn(BasePermission):
+    def has_permission(self, request, view):
+        return has_role(request.user, ROLE_MAP['issue_books'] + ROLE_MAP['return_books'])
+
+
+class CanHandleFines(BasePermission):
+    def has_permission(self, request, view):
+        return has_role(request.user, ROLE_MAP['handle_fines'])
+
+
+class CanViewRequests(BasePermission):
+    def has_permission(self, request, view):
+        return has_role(request.user, ROLE_MAP['view_requests'])
+

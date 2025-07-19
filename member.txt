@@ -1,0 +1,15 @@
+username,email,password,first_name,last_name,middle_name,father_first_name,father_last_name,class_name,section,mobile_number,cnic,department,session,registration_id,roll_no,shift,security_fee,home_address,emergency_contact,library_membership_id
+ali01,ali01@example.com,pass@123,Adeel,Khan,,Zafar,Khan,BSCS,A,03111222333,3520111122333,1,1,REG-001,CS-001,DAY,1000,House 1,03211234567,LIB001
+ali02,ali02@example.com,pass@124,Farhan,Ahmed,,Naveed,Ahmed,BSIT,B,03111222334,3520111122334,1,1,REG-002,CS-002,NIGHT,1100,House 2,03211234568,LIB002
+ali03,ali03@example.com,pass@125,Sara,Malik,,Aslam,Malik,BSSE,C,03111222335,3520111122335,1,1,REG-003,CS-003,DAY,1200,House 3,03211234569,LIB003
+ali04,ali04@example.com,pass@126,Zain,Shah,,Hassan,Shah,BSCS,A,03111222336,3520111122336,1,1,REG-004,CS-004,NIGHT,1300,House 4,03211234560,LIB004
+ali05,ali05@example.com,pass@127,Usman,Raza,,Tariq,Raza,BSIT,B,03111222337,3520111122337,1,1,REG-005,CS-005,DAY,1400,House 5,03211234561,LIB005
+ali06,ali06@example.com,pass@128,Ali,Mughal,,Rashid,Mughal,BSSE,C,03111222338,3520111122338,1,1,REG-006,CS-006,NIGHT,1500,House 6,03211234562,LIB006
+ali07,ali07@example.com,pass@129,Taha,Sheikh,,Faizan,Sheikh,BSCS,A,03111222339,3520111122339,1,1,REG-007,CS-007,DAY,1600,House 7,03211234563,LIB007
+ali08,ali08@example.com,pass@130,Areeba,Nasir,,Khalid,Nasir,BSIT,B,03111222340,3520111122340,1,1,REG-008,CS-008,NIGHT,1700,House 8,03211234564,LIB008
+ali09,ali09@example.com,pass@131,Fatima,Zaheer,,Abid,Zaheer,BSSE,C,03111222341,3520111122341,1,1,REG-009,CS-009,DAY,1800,House 9,03211234565,LIB009
+ali10,ali10@example.com,pass@132,Saad,Khalid,,Imran,Khalid,BSCS,A,03111222342,3520111122342,1,1,REG-010,CS-010,NIGHT,1900,House 10,03211234566,LIB010
+ali11,ali11@example.com,pass@133,Hamza,Malik,,Javed,Malik,BSIT,B,03111222343,3520111122343,1,1,REG-011,CS-011,DAY,1000,House 11,03211234567,LIB011
+ali12,ali12@example.com,pass@134,Hiba,Yousaf,,Kashif,Yousaf,BSSE,C,03111222344,3520111122344,1,1,REG-012,CS-012,NIGHT,1100,House 12,03211234568,LIB012
+ali13,ali13@example.com,pass@135,Ayan,Ali,,Nasir,Ali,BSCS,A,03111222345,3520111122345,1,1,REG-013,CS-013,DAY,1200,House 13,03211234569,LIB013
+

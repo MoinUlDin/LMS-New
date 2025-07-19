@@ -1,0 +1,101 @@
+{# core/templates/emails/overdue_notice.html #}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>
+      Overdue Notice: “{{ book_title }}” Is {{ days_over }} Day(s) Late
+    </title>
+    <style>
+      /* Any shared CSS (optional) */
+    </style>
+  </head>
+
+  <body style="margin: 0; padding: 0; background-color: #f5f5f5">
+    <table
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      style="background-color: #f5f5f5; padding: 20px 0"
+    >
+      <tr>
+        <td align="center">
+          <!-- Card container -->
+          <table
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            role="presentation"
+            style="
+              background-color: #ffffff;
+              border-radius: 8px;
+              overflow: hidden;
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+              font-family: Arial, sans-serif;
+            "
+          >
+            <!-- Header -->
+            <tr>
+              <td
+                style="
+                  background-color: #f1857c;
+                  color: #ffffff;
+                  text-align: center;
+                  padding: 20px;
+                  font-size: 24px;
+                "
+              >
+                Overdue Notice
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td
+                style="
+                  padding: 30px;
+                  color: #333333;
+                  font-size: 16px;
+                  line-height: 1.5;
+                "
+              >
+                <p>Hi {{ user.first_name }},</p>
+                <p>
+                  Your borrowed book:
+                  <strong>“{{ book_title }}”</strong><br />
+                  Issued on: {{ issue_date }}<br />
+                  Due date: {{ due_date }}
+                </p>
+                <p>
+                  It’s now <strong>{{ days_over }}</strong> day(s) overdue. Your
+                  accumulated fine is: <strong>Rs.{{ fine }}</strong>.
+                </p>
+                <p>
+                  Please return the book as soon as possible to avoid further
+                  charges.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td
+                style="
+                  background-color: #f0f0f0;
+                  color: #666666;
+                  text-align: center;
+                  font-size: 12px;
+                  padding: 15px;
+                "
+              >
+                Thank you,<br />
+                {{ library_name }}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
