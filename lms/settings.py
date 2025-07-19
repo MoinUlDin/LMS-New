@@ -20,6 +20,7 @@ SECRET_KEY = "i4lz)ec6yzw1#$wis03=o@k9t%+8^&t#yd=(c@(_havg*wi=6^"
 DEBUG = env.bool('DEBUG', default=True)
 ALLOWED_HOSTS = [
     "backendlms.thevista365.com",
+    ".thevista365.com"
     "kfgc.schoolcare.pk",
     "testing-lms.schoolcare.pk",
     "127.0.0.1",

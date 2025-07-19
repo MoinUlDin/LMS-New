@@ -7,5 +7,5 @@ python manage.py runapscheduler &
 # gunicorn lms.wsgi --bind=0.0.0.0:80
 
  exec gunicorn lms.wsgi:application \
-   --bind 0.0.0.0:3000 \
+   --bind 0.0.0.0:80 \
    --workers 3
