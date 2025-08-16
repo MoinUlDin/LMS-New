@@ -613,4 +613,15 @@ def download_membership_card(request, member_id):
     return FileResponse(pdf_buffer, as_attachment=True, filename=f"{member.member_id}_card.pdf")
 
 
+class GetVersionInfo(APIView):
+    permission_classes=[AllowAny]
 
+    def get(self, request, *args, **kwargs): 
+        payload = {
+            "version": "1.1.1",
+            "last_updated": "16-08-2025",
+            "details": "Migrated to new URL, and connecting to real PostgreSQL database",
+            "created_by": "Moin ul din",
+            "email": "moinuldinc@gmail.com",
+        }
+        return Response(payload, status=status.HTTP_200_OK)

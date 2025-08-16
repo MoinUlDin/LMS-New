@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-
+from core.views import GetVersionInfo
 schema_view = csrf_exempt(SpectacularAPIView.as_view(
     permission_classes=[AllowAny],
     authentication_classes=[],
@@ -25,6 +25,7 @@ urlpatterns = [
     path('reports/', include('reports.reports_urls')),
     path('settings/', include('settings.settings_urls')),
     path("notifications/", include("notifications.urls")),
+    path("get_version/",GetVersionInfo.as_view(), name="get_version"),
     path('', include('core.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

@@ -16,12 +16,12 @@ if not env_file.exists():
     raise RuntimeError(f"⛔️ could not find .env at {env_file!r}")
 env.read_env(str(env_file))
 # 🔐 Security
-SECRET_KEY = "i4lz)ec6yzw1#$wis03=o@k9t%+8^&t#yd=(c@(_havg*wi=6^"
+SECRET_KEY = "i4lz)ec6yzw1#$wis03=o@kasdfasdfaseaFEBbfgFFDEgdsGGDGGVdsdfdewqA3egvbarna9t%+8^&t#yd=(c@(_havg*wi=6^"
 DEBUG = env.bool('DEBUG', default=True)
 ALLOWED_HOSTS = [
     "backendlms.thevista365.com",
-    ".thevista365.com"
     "kfgc.schoolcare.pk",
+    "kfgc.online",
     "testing-lms.schoolcare.pk",
     "127.0.0.1",
     "localhost",
@@ -30,6 +30,7 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://backendlms.thevista365.com",
     "https://kfgc.schoolcare.pk",
+    "https://kfgc.online/"
     "https://testing-lms.schoolcare.pk",
     "http://localhost:8000",
     "http://127.0.0.1:8000"
@@ -37,6 +38,7 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOWED_ORIGINS = [
     "https://backendlms.thevista365.com",
     "https://kfgc.schoolcare.pk",
+    "https://kfgc.online",
     "https://testing-lms.schoolcare.pk",
     "http://localhost:3000",      # if your React runs on 3000 in dev
     "http://127.0.0.1:3000",
@@ -100,12 +102,25 @@ TEMPLATES = [
 WSGI_APPLICATION = 'lms.wsgi.application'
 
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+# DB will be used in Production
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),   # or IP address of your DB server
+        'PORT': env('DB_PORT'),   # default PostgreSQL port
     }
 }
+
 
 TIME_ZONE = 'Asia/Karachi'
 
@@ -174,7 +189,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 
-FRONTEND_URL = "https://kfgc.schoolcare.pk"
+FRONTEND_URL = "https://kfgc.online/"
 
 CORS_ALLOW_CREDENTIALS = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
