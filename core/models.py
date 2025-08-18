@@ -144,7 +144,7 @@ class MemberProfile(models.Model):
     library_membership_id = models.CharField(
         max_length=50, unique=True, blank=True, null=True)
     mobile_number = models.CharField(max_length=15)
-    cnic = models.CharField(max_length=13, blank=True, null=True)
+    cnic = models.CharField(max_length=15, blank=True, null=True)
     security_fee = models.DecimalField(
         max_digits=8, decimal_places=2, default=0.00)
     payment_proof = models.ImageField(

@@ -12,6 +12,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework import viewsets
 from rest_framework.views import APIView
+from django.db import transaction, IntegrityError
 
 
 def generate_unique_member_id(user_id, format_string):
@@ -86,10 +87,37 @@ class LibrarySettingsView(APIView):
         if self.request.method in ["PUT", 'PATCH']:
             return [AdminOrGroups(required_permission='core.change_librarysettings')]
         return super().get_permissions()
+    
+    
+class LibrarySettingsView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get_permissions(self):
+        if self.request.method in ["PUT", 'PATCH']:
+            return [AdminOrGroups(required_permission='core.change_librarysettings')]
+        return super().get_permissions()
+    
+    def _get_or_create_settings():
+        settings = LibrarySettings.objects.first()
+        if settings:
+            return settings
+
+        with transaction.atomic():
+            settings = LibrarySettings.objects.first()
+            if settings:
+                return settings
+            try:
+                settings = LibrarySettings.objects.create()
+            except IntegrityError:
+                # another process created it concurrently → fetch it
+                settings = LibrarySettings.objects.first()
+        return settings             
+    
     def get(self, request):
         try:
-            # Assuming there is only one settings object
-            settings = LibrarySettings.objects.first()
+            settings = self._get_or_create_settings()
+            if not settings:
+                return Response({"detail": "Unable to initialize settings."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             if settings:
                 serializer = LibrarySettingsSerializer(settings)
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -110,6 +138,7 @@ class LibrarySettingsView(APIView):
             return Response({"detail": "Settings not found"}, status=status.HTTP_404_NOT_FOUND)
         except LibrarySettings.DoesNotExist:
             return Response({"detail": "Settings not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 class ModuleViewSet(viewsets.ModelViewSet):

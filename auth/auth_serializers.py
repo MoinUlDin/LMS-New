@@ -8,6 +8,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from core.scheduler import scheduler
 from core.emailServices import send_welcome_email
@@ -178,6 +179,7 @@ class SingleMemberRegisterSerializer(serializers.ModelSerializer):
                   'email', 'password', 'payment_proof', 'profile_photo',
                   ]
 
+    @transaction.atomic
     def create(self, validated_data):
         password = validated_data.pop('password')
         profile_photo = validated_data.pop('profile_photo', None)
@@ -197,6 +199,17 @@ class SingleMemberRegisterSerializer(serializers.ModelSerializer):
         member_id = f"MBR-{(last_profile.id + 1) if last_profile else 1:04d}"
 
         # Create the profile
+        data = self.context['request'].data
+        cnic = (data.get('cnic') or '').strip()
+        mobile_number = (data.get('mobile_number') or '').strip()
+
+        # Validate lengths with DRF errors
+        if cnic and len(cnic) > 14:
+            raise serializers.ValidationError({"detail": "CNIC too long (max 14 chars)."})
+        if mobile_number and len(mobile_number) > 15:
+            raise serializers.ValidationError({"detail": "Mobile number too long (max 15 chars)."})
+
+        # Create user
         MemberProfile.objects.create(
             user=user,
             member_id=member_id,

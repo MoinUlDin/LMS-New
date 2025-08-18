@@ -1,4 +1,4 @@
-#!/bin/sh
+# runServer.sh
 
 python manage.py collectstatic --no-input
 python manage.py makemigrations
