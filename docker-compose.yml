@@ -1,0 +1,37 @@
+version: "3.8"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - SECRET_KEY=${SECRET_KEY}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - TENANT_ID=${TENANT_ID}
+      - PROVISION_CALLBACK_TOKEN=${PROVISION_CALLBACK_TOKEN}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    ports:
+      - "80:80"
+    depends_on:
+      - db
+    volumes:
+      - staticfiles:/usr/src/app/staticfiles
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
+  staticfiles:

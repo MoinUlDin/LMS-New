@@ -26,6 +26,9 @@ from .serializers import FineSerializer
 from django.db import transaction
 from books.books_serializers import BookDetailSerializer
 from decimal import Decimal, ROUND_HALF_UP
+from django.http import JsonResponse
+from django.conf import settings
+from django.contrib.auth import get_user_model
 
     
 class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
@@ -625,3 +628,25 @@ class GetVersionInfo(APIView):
             "email": "moinuldinc@gmail.com",
         }
         return Response(payload, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def internal_provision(request):
+    token = request.headers.get('X-Provision-Token')
+    if token != settings.PROVISION_CALLBACK_TOKEN:
+        return Response({"detail":"forbidden"}, status=403)
+
+    data = request.data
+    admin_email = data.get('admin_email')
+    admin_password = data.get('admin_password')
+
+    # Create admin if not exists
+    User = get_user_model()
+    if admin_email and admin_password and not User.objects.filter(email=admin_email).exists():
+        User.objects.create_superuser(username=admin_email.split('@')[0], email=admin_email, password=admin_password)
+
+    # You can also run other tenant-specific setup here (seed data)
+    return Response({"ok": True})
+
+def healthz(request):
+    return JsonResponse({"status": "ok"})

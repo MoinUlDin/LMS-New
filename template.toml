@@ -1,0 +1,54 @@
+[variables]
+tenant_id = "${tenant_id}"
+postgres_db = "${postgres_db}"
+postgres_user = "${postgres_user}"
+postgres_password = "${postgres_password}"
+secret_key = "${secret_key}"
+admin_email = "${admin_email}"
+admin_password = "${admin_password}"
+domain = "${domain}"
+provision_token = "${provision_token}"   # will populate PROVISION_CALLBACK_TOKEN inside container
+
+[config]
+  [[config.env]]
+  name = "DB_NAME"
+  value = "${postgres_db}"
+
+  [[config.env]]
+  name = "DB_USER"
+  value = "${postgres_user}"
+
+  [[config.env]]
+  name = "DB_PASSWORD"
+  value = "${postgres_password}"
+
+  [[config.env]]
+  name = "DB_HOST"
+  value = "db"
+
+  [[config.env]]
+  name = "DB_PORT"
+  value = "5432"
+
+  [[config.env]]
+  name = "SECRET_KEY"
+  value = "${secret_key}"
+
+  [[config.env]]
+  name = "ADMIN_EMAIL"
+  value = "${admin_email}"
+
+  [[config.env]]
+  name = "ADMIN_PASSWORD"
+  value = "${admin_password}"
+
+  [[config.env]]
+  name = "TENANT_ID"
+  value = "${tenant_id}"
+
+  [[config.env]]
+  name = "PROVISION_CALLBACK_TOKEN"
+  value = "${provision_token}"
+
+  [[config.domains]]
+  name = "${domain}"

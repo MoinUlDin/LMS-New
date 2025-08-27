@@ -8,6 +8,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from core.views import healthz, internal_provision
 from core.views import GetVersionInfo
 schema_view = csrf_exempt(SpectacularAPIView.as_view(
     permission_classes=[AllowAny],
@@ -29,4 +30,6 @@ urlpatterns = [
     path('', include('core.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('healthz/', healthz),
+    path('internal/provision/', internal_provision),
 ]
