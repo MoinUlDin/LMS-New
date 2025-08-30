@@ -102,24 +102,24 @@ TEMPLATES = [
 WSGI_APPLICATION = 'lms.wsgi.application'
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-# DB will be used in Production
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),   # or IP address of your DB server
-        'PORT': env('DB_PORT'),   # default PostgreSQL port
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# DB will be used in Production
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': env('DB_NAME'),
+#         'USER': env('DB_USER'),
+#         'PASSWORD': env('DB_PASSWORD'),
+#         'HOST': env('DB_HOST'),   # or IP address of your DB server
+#         'PORT': env('DB_PORT'),   # default PostgreSQL port
+#     }
+# }
 
 
 PROVISION_CALLBACK_TOKEN = os.getenv('PROVISION_CALLBACK_TOKEN', None)

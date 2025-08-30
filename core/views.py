@@ -631,6 +631,7 @@ class GetVersionInfo(APIView):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def internal_provision(request):
     token = request.headers.get('X-Provision-Token')
     if token != settings.PROVISION_CALLBACK_TOKEN:
@@ -648,5 +649,7 @@ def internal_provision(request):
     # You can also run other tenant-specific setup here (seed data)
     return Response({"ok": True})
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def healthz(request):
     return JsonResponse({"status": "ok"})
