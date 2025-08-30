@@ -1,23 +1,30 @@
-from datetime import timedelta
-import os
 from pathlib import Path
+import os
+import warnings
 import environ  # type: ignore
-USE_TZ = True
-
-
-
-env = environ.Env()
-environ.Env.read_env()
+from dotenv import load_dotenv  # pip install python-dotenv
+from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# instantiate environ
 env = environ.Env()
-env_file = BASE_DIR / '.env'
-if not env_file.exists():
-    raise RuntimeError(f"⛔️ could not find .env at {env_file!r}")
-env.read_env(str(env_file))
-# 🔐 Security
-SECRET_KEY = "i4lz)ec6yzw1#$wis03=o@kasdfasdfaseaFEBbfgFFDEgdsGGDGGVdsdfdewqA3egvbarna9t%+8^&t#yd=(c@(_havg*wi=6^"
-DEBUG = env.bool('DEBUG', default=True)
+
+# Load .env if present — otherwise use OS env vars (no fatal error)
+env_file = BASE_DIR / ".env"
+if env_file.exists():
+    # load env file to both os.environ and environ.Env
+    load_dotenv(dotenv_path=str(env_file))
+    env.read_env(str(env_file))
+else:
+    warnings.warn(f".env file not found at {env_file}. Using OS environment variables instead.")
+
+# Example settings read via environ.Env or os.environ
+SECRET_KEY = env.str("DJANGO_SECRET_KEY", default=os.environ.get("DJANGO_SECRET_KEY", "dev-secret-only-DO-NOT-USE-IN-PRODTION-Moin"))
+if not SECRET_KEY or SECRET_KEY == "dev-secret-only-DO-NOT-USE-IN-PRODTION-Moin":
+    warnings.warn("Running without a secure DJANGO_SECRET_KEY")
+    
+DEBUG = env.bool("DEBUG", default=True)
+# ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=os.environ.get("ALLOWED_HOSTS","").split(","))
 ALLOWED_HOSTS = [
     "backendlms.thevista365.com",
     "kfgc.schoolcare.pk",
@@ -102,24 +109,24 @@ TEMPLATES = [
 WSGI_APPLICATION = 'lms.wsgi.application'
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-# DB will be used in Production
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': env('DB_NAME'),
-#         'USER': env('DB_USER'),
-#         'PASSWORD': env('DB_PASSWORD'),
-#         'HOST': env('DB_HOST'),   # or IP address of your DB server
-#         'PORT': env('DB_PORT'),   # default PostgreSQL port
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+
+# DB will be used in Production
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("DB_NAME", default=os.environ.get("DB_NAME")),
+        "USER": env("DB_USER", default=os.environ.get("DB_USER")),
+        "PASSWORD": env("DB_PASSWORD", default=os.environ.get("DB_PASSWORD")),
+        "HOST": env("DB_HOST", default=os.environ.get("DB_HOST")),
+        "PORT": env("DB_PORT", default=os.environ.get("DB_PORT", "5432")),
+    }
+}
 
 
 PROVISION_CALLBACK_TOKEN = os.getenv('PROVISION_CALLBACK_TOKEN', None)
@@ -187,7 +194,10 @@ REST_FRAMEWORK = {
 }
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Library Management System API',
-    'DESCRIPTION': 'Zubair Hassan',
+    'DESCRIPTION': 'Moin Ul din / Zubair Hassan ',
+    'CONTACT': {
+        'email': 'moinuldinc@gmail.com',
+    },
     'VERSION': '1.0.0',
 }
 
