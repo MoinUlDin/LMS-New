@@ -79,15 +79,6 @@ def get_library_settings(request):
             "fine_per_day": str(settings.fine_per_day)
         }, status=status.HTTP_200_OK)
 
-
-class LibrarySettingsView(APIView):
-    permission_classes = [AllowAny]
-    
-    def get_permissions(self):
-        if self.request.method in ["PUT", 'PATCH']:
-            return [AdminOrGroups(required_permission='core.change_librarysettings')]
-        return super().get_permissions()
-    
     
 class LibrarySettingsView(APIView):
     permission_classes = [AllowAny]
@@ -97,7 +88,7 @@ class LibrarySettingsView(APIView):
             return [AdminOrGroups(required_permission='core.change_librarysettings')]
         return super().get_permissions()
     
-    def _get_or_create_settings():
+    def _get_or_create_settings(self):
         settings = LibrarySettings.objects.first()
         if settings:
             return settings
